@@ -76,7 +76,7 @@ class PlotMALoss:
 		self.row_dis_col_f_c = np.zeros((len(self.list_distance), len(self.list_f_c)))
 		self.MA = MolecularAbsorption(t=self.T, phi=self.phi, p=self.p)
 
-	def plot(self):
+	def plot(self, savefig):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
 				self.row_dis_col_f_c[i, j] = self.MA.cal_ma_loss(f_c=f, distance=d)
@@ -87,9 +87,12 @@ class PlotMALoss:
 		plt.ylabel('Molecular Absorption Loss')
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
+		if savefig:
+			plt.savefig('./Figures/MolecularAbsorptionLoss.pdf')
+			print(f'MolecularAbsorptionLoss.pdf saved!!!')
 		plt.show()
 
-	def plot_db(self):
+	def plot_db(self, savefig):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
 				self.row_dis_col_f_c[i, j] = self.MA.cal_ma_loss_db(f_c=f, distance=d)
@@ -100,6 +103,9 @@ class PlotMALoss:
 		plt.ylabel('Molecular Absorption Loss (dB)')
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
+		if savefig:
+			plt.savefig('./Figures/MolecularAbsorptionLoss_dB.pdf')
+			print(f'MolecularAbsorptionLoss_dB.pdf saved!!!')
 		plt.show()
 
 class OverallPathLoss:
@@ -131,7 +137,7 @@ class PlotOverallLoss:
 		self.row_dis_col_f_c = np.zeros((len(self.list_distance), len(self.list_f_c)))
 		self.OverallPathLoss = OverallPathLoss(g_t=self.g_t, g_r=self.g_r, t=self.T, phi=self.phi, p=self.p)
 
-	def plot(self):
+	def plot(self, savefig):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
 				self.row_dis_col_f_c[i, j] = self.OverallPathLoss.overall_path_loss(f_c=f, distance=d)
@@ -142,9 +148,12 @@ class PlotOverallLoss:
 		plt.ylabel('Overall Path Loss')
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
+		if savefig:
+			plt.savefig('./Figures/OverallPathLoss.pdf')
+			print(f'OverallPathLoss.pdf saved!!!')
 		plt.show()
 
-	def plot_db(self):
+	def plot_db(self, savefig):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
 				self.row_dis_col_f_c[i, j] = self.OverallPathLoss.overall_path_loss_db(f_c=f, distance=d)
@@ -156,6 +165,9 @@ class PlotOverallLoss:
 		plt.ylabel('Overall Path Loss (dB)')
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
+		if savefig:
+			plt.savefig('./Figures/OverallPathLoss_dB.pdf')
+			print(f'OverallPathLoss_dB.pdf saved!!!')
 		plt.show()
 
 if __name__ == '__main__':
@@ -170,6 +182,7 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--distance', default=30, metavar='d', type=float, help='the distance')
 	parser.add_argument('-g_t', '--antenna_t', default=1, metavar='g_t', type=float, help='the transmit antenna gain')
 	parser.add_argument('-g_r', '--antenna_r', default=1, metavar='g_r', type=float, help='the receive antenna gain')
+	parser.add_argument('-sf', '--savefig', action='store_true', help='whether save figs')
 
 	args = parser.parse_args()
 
@@ -180,14 +193,14 @@ if __name__ == '__main__':
 	      f'The Molecular Absorption Coefficient: {MA.coefficient_kappa(args.car_freq)}\n\n'
 	      f'The mu: {MA.mu}')
 
-	list_distance = [1, 5, 10, 50, 100, 1000]
+	list_distance = [1, 5, 10, 20, 30] # meter
 
 	plot_MA = PlotMALoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
 	                  list_distance=list_distance, t=args.tem, phi=args.phi, p=args.pressure)
-	plot_MA.plot()
-	plot_MA.plot_db()
+	plot_MA.plot(savefig=args.savefig)
+	plot_MA.plot_db(savefig=args.savefig)
 
 	plot_OA = PlotOverallLoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
 	                  list_distance=list_distance, g_t=args.antenna_t, g_r=args.antenna_r, t=args.tem, phi=args.phi, p=args.pressure)
-	plot_OA.plot()
-	plot_OA.plot_db()
+	plot_OA.plot(savefig=args.savefig)
+	plot_OA.plot_db(savefig=args.savefig)
