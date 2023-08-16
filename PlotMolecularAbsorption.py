@@ -92,6 +92,22 @@ class PlotMALoss:
 			print(f'MolecularAbsorptionLoss.pdf saved!!!')
 		plt.show()
 
+	def plot_reproducing_ref(self, savefig):
+		for i, d in enumerate(self.list_distance):
+			for j, f in enumerate(self.list_f_c):
+				self.row_dis_col_f_c[i, j] = 1 / self.MA.cal_ma_loss(f_c=f, distance=d)
+
+		plt.figure(figsize=(10, 8))
+		for i in range(self.row_dis_col_f_c.shape[0]):
+			plt.plot(np.array(self.list_f_c) / 10 ** 9, self.row_dis_col_f_c[i, :], label=f'd={self.list_distance[i]} m')
+		plt.ylabel('Molecular Absorption Loss')
+		plt.xlabel('Carrier Frequency (GHz)')
+		plt.legend()
+		if savefig:
+			plt.savefig('./Figures/MolecularAbsorptionLoss_Reproducing.pdf')
+			print(f'MolecularAbsorptionLoss_Reproducing.pdf saved!!!')
+		plt.show()
+
 	def plot_db(self, savefig):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
@@ -193,11 +209,12 @@ if __name__ == '__main__':
 	      f'The Molecular Absorption Coefficient: {MA.coefficient_kappa(args.car_freq)}\n\n'
 	      f'The mu: {MA.mu}')
 
-	list_distance = [1, 5, 10, 20, 30] # meter
+	list_distance = [1, 5, 10, 50, 100, 1000] # meter
 
 	plot_MA = PlotMALoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
 	                  list_distance=list_distance, t=args.tem, phi=args.phi, p=args.pressure)
 	plot_MA.plot(savefig=args.savefig)
+	plot_MA.plot_reproducing_ref(savefig=args.savefig)
 	plot_MA.plot_db(savefig=args.savefig)
 
 	plot_OA = PlotOverallLoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
