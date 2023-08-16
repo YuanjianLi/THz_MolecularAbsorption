@@ -104,8 +104,8 @@ class PlotMALoss:
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
 		if savefig:
-			plt.savefig('./Figures/MolecularAbsorptionLoss_Reproducing.pdf')
-			print(f'MolecularAbsorptionLoss_Reproducing.pdf saved!!!')
+			plt.savefig('./Figures/MolecularAbsorptionLoss_Reproduced.pdf')
+			print(f'MolecularAbsorptionLoss_Reproduced.pdf saved!!!')
 		plt.show()
 
 	def plot_db(self, savefig):
