@@ -40,13 +40,13 @@ class MolecularAbsorption:
 		kappa_a = np.divide(
 							0.2205 * self.mu * (0.1303 * self.mu + 0.0294),
 		                    np.power(0.4093 * self.mu + 0.0925, 2) +
-		                    np.power(np.divide(100 * f_c, self.C) - 10.835, 2)
+		                    np.power(np.divide(f_c, 100 * self.C) - 10.835, 2)
 						   )
 
 		kappa_b = np.divide(
 							2.014 * self.mu * (0.1702 * self.mu + 0.0303),
 		                    np.power(0.537 * self.mu + 0.0956, 2) +
-		                    np.power(np.divide(100 * f_c, self.C) - 12.664, 2)
+		                    np.power(np.divide(f_c, 100 * self.C) - 12.664, 2)
 						   )
 
 		kappa_c = (
@@ -63,7 +63,7 @@ class MolecularAbsorption:
 
 	def cal_ma_loss(self, f_c, distance):
 		return 10 ** ((10 * self.coefficient_kappa(f_c) * distance * np.log10(np.e)) / 10)
-		# return np.exp(-self.coefficient_kappa(f_c) * distance / 2)
+		# return np.exp(-np.divide(self.coefficient_kappa(f_c) * distance, 1))
 
 
 class PlotMALoss:
@@ -79,6 +79,19 @@ class PlotMALoss:
 	def plot(self):
 		for i, d in enumerate(self.list_distance):
 			for j, f in enumerate(self.list_f_c):
+				self.row_dis_col_f_c[i, j] = self.MA.cal_ma_loss(f_c=f, distance=d)
+
+		plt.figure(figsize=(10, 8))
+		for i in range(self.row_dis_col_f_c.shape[0]):
+			plt.plot(np.array(self.list_f_c) / 10 ** 9, self.row_dis_col_f_c[i, :], label=f'd={self.list_distance[i]} m')
+		plt.ylabel('Molecular Absorption Loss')
+		plt.xlabel('Carrier Frequency (GHz)')
+		plt.legend()
+		plt.show()
+
+	def plot_db(self):
+		for i, d in enumerate(self.list_distance):
+			for j, f in enumerate(self.list_f_c):
 				self.row_dis_col_f_c[i, j] = self.MA.cal_ma_loss_db(f_c=f, distance=d)
 
 		plt.figure(figsize=(10, 8))
@@ -89,7 +102,6 @@ class PlotMALoss:
 		plt.legend()
 		plt.show()
 
-
 class OverallPathLoss:
 	def __init__(self, g_t, g_r, t, phi, p):
 		self.g_t = g_t
@@ -99,9 +111,13 @@ class OverallPathLoss:
 		self.p = p
 		self.MA = MolecularAbsorption(t=self.T, phi=self.phi, p=self.p)
 
-	def overall_path_loss(self, f_c, distance):
+	def overall_path_loss_db(self, f_c, distance):
 		return (20 * np.log10(np.divide(4 * np.pi * f_c * distance, self.MA.C * np.sqrt(self.g_t * self.g_r))) +
-		        self.MA.cal_ma_loss_db(f_c=f_c, distance=distance))
+		        self.MA.cal_ma_loss_db(f_c, distance))
+
+	def overall_path_loss(self, f_c, distance):
+		return (np.power(np.divide(4 * np.pi * f_c * distance, self.MA.C * np.sqrt(self.g_t * self.g_r)), 2) *
+		        self.MA.cal_ma_loss(f_c, distance))
 
 class PlotOverallLoss:
 	def __init__(self, list_f_c, list_distance, g_t, g_r, t, phi, p):
@@ -123,6 +139,20 @@ class PlotOverallLoss:
 		plt.figure(figsize=(10, 8))
 		for i in range(self.row_dis_col_f_c.shape[0]):
 			plt.plot(np.array(self.list_f_c) / 10 ** 9, self.row_dis_col_f_c[i, :], label=f'd={self.list_distance[i]} m')
+		plt.ylabel('Overall Path Loss')
+		plt.xlabel('Carrier Frequency (GHz)')
+		plt.legend()
+		plt.show()
+
+	def plot_db(self):
+		for i, d in enumerate(self.list_distance):
+			for j, f in enumerate(self.list_f_c):
+				self.row_dis_col_f_c[i, j] = self.OverallPathLoss.overall_path_loss_db(f_c=f, distance=d)
+
+		plt.figure(figsize=(10, 8))
+		for i in range(self.row_dis_col_f_c.shape[0]):
+			plt.plot(np.array(self.list_f_c) / 10 ** 9, self.row_dis_col_f_c[i, :],
+			         label=f'd={self.list_distance[i]} m')
 		plt.ylabel('Overall Path Loss (dB)')
 		plt.xlabel('Carrier Frequency (GHz)')
 		plt.legend()
@@ -136,8 +166,10 @@ if __name__ == '__main__':
 	parser.add_argument('-f_c', '--car_freq', default=0.38*10**12, metavar='f_c', type=float, help='the carrier frequency')
 	parser.add_argument('-t', '--tem', default=296, metavar='T', type=float, help='the temperature')
 	parser.add_argument('-phi', '--phi', default=0.5, metavar='phi', type=float, help='the relative humidity')
-	parser.add_argument('-p', '--pressure', default=101325, metavar='p', type=float, help='the pressure')
+	parser.add_argument('-p', '--pressure', default=1013.25, metavar='p', type=float, help='the pressure')
 	parser.add_argument('-d', '--distance', default=30, metavar='d', type=float, help='the distance')
+	parser.add_argument('-g_t', '--antenna_t', default=1, metavar='g_t', type=float, help='the transmit antenna gain')
+	parser.add_argument('-g_r', '--antenna_r', default=1, metavar='g_r', type=float, help='the receive antenna gain')
 
 	args = parser.parse_args()
 
@@ -148,10 +180,14 @@ if __name__ == '__main__':
 	      f'The Molecular Absorption Coefficient: {MA.coefficient_kappa(args.car_freq)}\n\n'
 	      f'The mu: {MA.mu}')
 
+	list_distance = [1, 5, 10, 50, 100, 1000]
+
 	plot_MA = PlotMALoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
-	                  list_distance=[1, 5, 10, 50, 100, 1000], t=args.tem, phi=args.phi, p=args.pressure)
+	                  list_distance=list_distance, t=args.tem, phi=args.phi, p=args.pressure)
 	plot_MA.plot()
+	plot_MA.plot_db()
 
 	plot_OA = PlotOverallLoss(list_f_c=list(np.arange(start=280, stop=400, step=.01) * 10**9),
-	                  list_distance=[1, 5, 10, 50, 100, 1000], g_t=1, g_r=1, t=args.tem, phi=args.phi, p=args.pressure)
+	                  list_distance=list_distance, g_t=args.antenna_t, g_r=args.antenna_r, t=args.tem, phi=args.phi, p=args.pressure)
 	plot_OA.plot()
+	plot_OA.plot_db()
